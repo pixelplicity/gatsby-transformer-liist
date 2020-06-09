@@ -1,7 +1,7 @@
 {
   "name": "gatsby-transformer-liist",
   "description": "A Gatsby transformer to convert spreadsheet nodes into resources and content for Liist sites",
-  "version": "0.0.0",
+  "version": "0.0.1-beta.1",
   "author": "Aquil.io <contact@aquil.io>",
   "license": "MIT",
   "repository": "Aquilio/gatsby-transformer-liist",
