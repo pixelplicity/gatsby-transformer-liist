@@ -25,7 +25,9 @@
   "dependencies": {
     "debug": "^4.1.1",
     "gatsby-source-filesystem": "^2.3.8",
-    "image-downloader": "^4.0.1"
+    "image-downloader": "^4.0.1",
+    "lodash.get": "^4.4.2",
+    "lodash.set": "^4.3.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",

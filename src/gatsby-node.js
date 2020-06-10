@@ -1,3 +1,6 @@
+const fs = require('fs');
+const get = require('lodash.get');
+const set = require('lodash.set');
 const {
   createRemoteFileNode,
   createFileNodeFromBuffer,
@@ -8,9 +11,6 @@ const { processRemoteImage } = require('./processRemoteImage');
 const debug = makeDebug('gatsby-transformer-liist');
 
 const createChildNode = async (_, { definition, imageFields, id }) => {
-  debug(
-    `Creating ${definition.name} node; imageFields=${imageFields.join(',')}`
-  );
   const {
     actions,
     node,
@@ -23,10 +23,11 @@ const createChildNode = async (_, { definition, imageFields, id }) => {
   const { createNode, createParentChildLink } = actions;
   await Promise.all(
     imageFields.map(async (field) => {
-      debug(`Processing image field "${field}"`);
-      if (node[field]) {
+      const fieldValue = get(node, field);
+      debug(`Processing image field "${field}"=>${fieldValue}`);
+      if (fieldValue) {
         try {
-          const remoteImageOptions = processRemoteImage(node[field]);
+          const remoteImageOptions = processRemoteImage(fieldValue);
           if (remoteImageOptions !== null) {
             let fileNode;
             if (remoteImageOptions.type === 'remote') {
@@ -48,17 +49,12 @@ const createChildNode = async (_, { definition, imageFields, id }) => {
                 createNodeId,
               });
             }
-            debug(`Created fileNode=`, fileNode);
             if (fileNode) {
-              node[`${field}___NODE`] = fileNode.id;
+              set(node, `${field}___NODE`, fileNode.id);
             }
           }
         } catch (e) {
-          console.error(
-            `Error getting image for "${field}" error=`,
-            e,
-            e.stack
-          );
+          console.error(`Error getting image for "${field}" error=`, e);
         }
       }
     })
@@ -87,15 +83,19 @@ const makeNode = async (_, { types }) => {
   let localImageFields = imageFields.slice();
 
   const id = createNodeId(node.id);
-  debug(`Creating ${definition.name} node for ${node.id} (${id})`);
-
-  // Just for this node, create a local image
-  if (dynamicTypes && node.type && node.type === 'Image') {
-    debug(`Found dynamic type for key=${node.key}`);
-    node.value = {
-      raw: node.value,
-    };
-    localImageFields.push('raw');
+  if (dynamicTypes) {
+    if (node.type) {
+      if (node.type === 'Image') {
+        debug(`Found dynamic image type for key=${node.key}`);
+        localImageFields.push('value.raw');
+      }
+      node.value = {
+        type: node.type,
+        raw: node.value,
+      };
+    } else {
+      return;
+    }
   }
 
   await createChildNode(_, {
@@ -106,7 +106,7 @@ const makeNode = async (_, { types }) => {
 };
 
 const addImageFieldToDefinition = (baseDef, prop) => {
-  debug(`Adding image definition for ${prop} to ${baseDef.name}`);
+  debug(`Adding image definition for "${prop}" field to ${baseDef.name}`);
   const newDef = { ...baseDef };
   newDef.fields[prop] = {
     type: 'File',
@@ -140,16 +140,26 @@ exports.onPreInit = ({ store }, { types }) => {
       }
       debug(`Updated definitions for ${definition.name} to`, {
         ...rest,
+        dynamicTypes,
         imageFields: imageFields || [],
         definition,
       });
       return {
         ...rest,
+        dynamicTypes,
         imageFields,
         definition,
       };
     }
   );
+};
+
+exports.onPreBootstrap = ({ cache }) => {
+  const dir = cache.directory;
+  debug(`Ensuring cache directory "${cache.directory}" exists`);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
 };
 
 exports.onCreateNode = async (_, options) => {
@@ -163,6 +173,7 @@ exports.createSchemaCustomization = ({ actions, schema }, { types }) => {
       name: 'LiistDynamicType',
       fields: {
         raw: 'String',
+        type: 'String',
         value: {
           type: 'File',
           resolve: (source, args, context) => {

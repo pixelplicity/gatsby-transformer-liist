@@ -75,7 +75,7 @@ const createLocalImage = async ({ imageDest, imageName, imageURL }) => {
     return `${imageDest}/${imageName}${extension}`;
   }
   if (type === 'remote') {
-    debug(`Downloading file to "${imageDest}" from "${imageURL}"`);
+    debug(`Downloading file to "${imageDest}"`);
     const result = await download
       .image({
         url: imageURL,
