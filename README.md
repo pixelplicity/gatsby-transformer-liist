@@ -12,10 +12,9 @@ A Gatsby transformer to convert spreadsheet nodes into resources and content for
   - [Manual](#manual)
 - [How to use](#how-to-use)
   - [Options](#options)
-  - [Site Images](#site-images)
-  - [Theme](#theme)
-  - [Fonts](#fonts)
-  - [Environment Variables](#environment-variables)
+  - [Definitions](#definitions)
+  - [Images](#images)
+  - [Dynamic Types](#dynamic-types)
 - [Changelog](#changelog)
 - [License](#license)
 
@@ -36,10 +35,7 @@ A Gatsby transformer to convert spreadsheet nodes into resources and content for
         {
         resolve: `gatsby-transformer-liist`,
         options: {
-          spreadsheetId: '1234',
-          worksheetTitle: 'Settings',
-          credentials: {/* service account credentials */},
-        }
+          types: [...]
       ],
     };
    ```
@@ -48,78 +44,34 @@ A Gatsby transformer to convert spreadsheet nodes into resources and content for
 
 ### Options
 
-| Option                     | Explanation                                                                 |
-| -------------------------- | --------------------------------------------------------------------------- |
-| `spreadsheetId`            | The id of the spreadsheet (required)                                        |
-| `worksheetTitle`           | The title of the shett containing the configuration (required)              |
-| `credentials`              | The service account credentials generated from the Google Developer Console |
-| `imageSettings`            | Array of image configs                                                      |
-| `imageSettings.key`        | The key of the row the value comes from                                     |
-| `imageSettings.dest`       | The destination folder (relative to the root of the site)                   |
-| `imageSettings.outputName` | The name of the output (minues the extension)                               |
-| `themeSettings`            | Theme settings                                                              |
-| `themeSettings.output`     | Name of the generated scss file                                             |
-| `themeSettings.formatters` | Array of variable (inner part of the [...]) key (function) pairs            |
-| `fontKeys`                 | Array of theme variables that are fonts that should be prefetched           |
+| Option               | Explanation                                   |
+| -------------------- | --------------------------------------------- |
+| `types`              | An array of node types                        |
+| `types.nodeType`     | The type of node that creates this child node |
+| `types.dynamicTypes` | Whether the type for each node is dynamic     |
+| `types.definition`   | A GatsbyJS type builder object                |
+
+### Definitions
+
+Definitions are passed to Gatsby's `schema.buildObjectType`. The Gatsby [docs](https://www.gatsbyjs.org/docs/schema-customization/#gatsby-type-builders) cover all the options available.
 
 ### Images
 
-Any images configured with the `imageSettings` option will be downloaded, placed in the destination folder and have the public path exposed as an environment variable.
+Any field with a type of `Image` will have it's type changed to `File` and have a custom resolver function added that links to a `FileNode` that is created from the url value.
 
-This configuration:
+### Dynamic Types
 
-```js
-{
-  key: 'GATSBY_LOGO',
-  dest: 'src/images',
-  outputName: 'logo'
-}
+Certain nodes can have their type determined by a `type` field. These nodes will be created with a `value` field of type `LiistDynamicType`. The resulting node then becomes:
+
 ```
-
-Would result in the image being downloaded and stored in `src/images/logo.{ext}`. The environment variable `GATSBY_LOGO` would equal `images/logo.{ext}`
-
-### Theme
-
-Any settings with a key of the format `THEME[$secondary]` will be put into a custom scss file located at `src/scss/` with the filename specified by `themeSettings.output`. The value inside the `[...]` is the variable name and the values will be printed as is.
-
-If a variable's value requires a custom format, provide that in `themeSettings.formatters`. The key should be the theme variable and the function takes the value from the spreadsheet and must return a string to be written to the SCSS file.
-
-For example:
-
-`THEME[$default] => #00ff00`
-becomes
-`$default: #00ff00;`
-
-With this configuration
-
-```js
 {
-  formatters: {
-    '$somethingSpecial': value => `'Something'`;
+  key: 'someKey',
+  value: {
+    type: 'Image',
+    raw: 'image.jpg',
+    value: {...} // childImageSharpNode
   }
 }
-```
-
-Will results in:
-
-`$somethingSpecial: 'Something';`
-
-### Fonts
-
-Theme variables that are provided in the `fontKeys` optionseme settings but their output is a bit different. The two keys available are `THEME[$font-family-base]` and `THEME[$font-family-headers]`. These should be valid Google font.
-
-In addition to being output in `src/scss/_liist-config.scss`, they are also prefetched using the `gatsby-plugin-prefetch-google-fonts` plugin.
-
-### Environment Variables
-
-All other settings will be put on `process.env` using their key as the variable name.
-
-For example
-
-`GATSBY_SITE_TITLE => Site Title`
-
-```js
-console.log(process.env.GATSBY_SITE_TITLE); //-> 'Site Title'
 ```
 
 ## Changelog
