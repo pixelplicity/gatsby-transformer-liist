@@ -2,11 +2,11 @@
   "name": "gatsby-transformer-liist",
   "description": "A Gatsby transformer to convert spreadsheet nodes into resources and content for Liist sites",
   "version": "0.0.1-beta.1",
-  "author": "Aquil.io <contact@aquil.io>",
+  "author": "Curtis Cummings <curtis@pixelplicity.com>",
   "license": "MIT",
-  "repository": "Aquilio/gatsby-transformer-liist",
+  "repository": "pixelplicity/gatsby-transformer-liist",
   "bugs": {
-    "url": "https://github.com/Aquilio/gatsby-transformer-liist/issues"
+    "url": "https://github.com/pixelplicity/gatsby-transformer-liist/issues"
   },
   "main": "index.js",
   "keywords": [
